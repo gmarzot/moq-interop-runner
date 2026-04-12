@@ -287,6 +287,22 @@
       }
     },
 
+    "moqlivemock": {
+      "name": "moqlivemock",
+      "organization": "Eyevinn",
+      "repository": "https://github.com/Eyevinn/moqlivemock",
+      "draft_versions": ["draft-14", "draft-16"],
+      "notes": "Go implementation. Test client for MoQ interop testing.",
+      "roles": {
+        "client": {
+          "docker": {
+            "image": "ghcr.io/eyevinn/mlmtest:latest",
+            "notes": "Published from Eyevinn/moqlivemock CI. Supports RELAY_URL, TESTCASE, TLS_DISABLE_VERIFY, DRAFT env vars."
+          }
+        }
+      }
+    },
+
     "xquic": {
       "name": "xquic",
       "organization": "Alibaba",
