@@ -307,6 +307,39 @@
           }
         }
       }
+    },
+    "streamforge": {
+      "name": "streamforge",
+      "organization": "Nokia",
+      "repository": "",
+      "draft_versions": ["draft-16"],
+      "notes": "QUIC-Go and Wentransport-GO implementation.",
+      "roles": {
+        "relay": {
+          "docker": {
+            "image": "streamforge:latest",
+            "notes": "Pre-built from Nokia streamforge repo."
+          },
+           "remote": [
+            {
+              "url": "moqt://local.nokiaresearch.com:8443/moq",
+              "transport": "quic",
+              "notes": "Raw QUIC endpoint"
+            },
+            {
+              "url": "https://local.nokiaresearch.com:8080/moq",
+              "transport": "webtransport",
+              "notes": "WebTransport endpoint"
+            }
+          ]
+        },
+         "client": {
+          "docker": {
+            "image": "streamforge-client:latest",
+            "notes": "External pre-built image"
+          }
+        }
+      }
     }
   },
 

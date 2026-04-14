@@ -34,6 +34,9 @@ CLIENT_IMAGE ?= moq-test-client:latest
 # For test-external (direct URL, not docker-compose)
 RELAY_URL ?= https://relay:4443
 TLS_DISABLE_VERIFY ?= false
+# Optional extra args for `docker run` in test-external.
+# Example: EXTRA_DOCKER_RUN_ARGS="--add-host local.nokiaresearch.com:host-gateway"
+EXTRA_DOCKER_RUN_ARGS ?=
 
 #############################################################################
 # Certificate Generation (following QUIC interop runner conventions)
@@ -88,7 +91,9 @@ test-single:
 test-external:
 	@echo "Running tests against $(RELAY_URL)..."
 	@echo "  Client: $(CLIENT_IMAGE)"
+	@if [ -n "$(EXTRA_DOCKER_RUN_ARGS)" ]; then echo "  Extra docker args: $(EXTRA_DOCKER_RUN_ARGS)"; fi
 	docker run --rm \
+		$(EXTRA_DOCKER_RUN_ARGS) \
 		--network host \
 		-e RELAY_URL=$(RELAY_URL) \
 		-e TLS_DISABLE_VERIFY=$(TLS_DISABLE_VERIFY) \
