@@ -312,7 +312,7 @@
       "name": "streamforge",
       "organization": "Nokia",
       "repository": "",
-      "draft_versions": ["draft-16"],
+      "draft_versions": ["draft-17"],
       "notes": "QUIC-Go and Wentransport-GO implementation.",
       "roles": {
         "relay": {
@@ -320,18 +320,18 @@
             "image": "streamforge:latest",
             "notes": "Pre-built from Nokia streamforge repo."
           },
-           "remote": [
-            {
-              "url": "moqt://local.nokiaresearch.com:8443/moq",
-              "transport": "quic",
-              "notes": "Raw QUIC endpoint"
-            },
-            {
-              "url": "https://local.nokiaresearch.com:8080/moq",
-              "transport": "webtransport",
-              "notes": "WebTransport endpoint"
-            }
-          ]
+          "remote": [
+          {
+            "url": "moqt://local.nokiaresearch.com:4443/moq",
+            "transport": "quic",
+            "notes": "Raw QUIC endpoint"
+          },
+          {
+            "url": "https://local.nokiaresearch.com:4443/moq",
+            "transport": "webtransport",
+            "notes": "WebTransport endpoint"
+          }
+        ]
         },
          "client": {
           "docker": {
