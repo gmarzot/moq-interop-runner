@@ -297,6 +297,7 @@
         "relay": {
           "docker": {
             "image": "ghcr.io/englishm/moq-interop-runner-xquic-moq-relay:latest",
+            "url": "moqt://relay:4443",
             "notes": "Pre-built on GHCR (amd64). To build from source: ./builds/xquic/build.sh --target relay"
           }
         },
@@ -304,39 +305,6 @@
           "docker": {
             "image": "ghcr.io/englishm/moq-interop-runner-xquic-moq-client:latest",
             "notes": "Pre-built on GHCR (amd64). To build from source: ./builds/xquic/build.sh --target client"
-          }
-        }
-      }
-    },
-    "streamforge": {
-      "name": "streamforge",
-      "organization": "Nokia",
-      "repository": "",
-      "draft_versions": ["draft-17"],
-      "notes": "QUIC-Go and Wentransport-GO implementation.",
-      "roles": {
-        "relay": {
-          "docker": {
-            "image": "streamforge:latest",
-            "notes": "Pre-built from Nokia streamforge repo."
-          },
-          "remote": [
-          {
-            "url": "moqt://local.nokiaresearch.com:4443/moq",
-            "transport": "quic",
-            "notes": "Raw QUIC endpoint"
-          },
-          {
-            "url": "https://local.nokiaresearch.com:4443/moq",
-            "transport": "webtransport",
-            "notes": "WebTransport endpoint"
-          }
-        ]
-        },
-         "client": {
-          "docker": {
-            "image": "streamforge-client:latest",
-            "notes": "External pre-built image"
           }
         }
       }
@@ -349,7 +317,7 @@
     "2. Fill in metadata: name, organization, repository, draft_versions",
     "3. Add 'roles' object with supported roles (relay, client, publisher, subscriber)",
     "4. For each role, specify either/both:",
-    "   - 'docker': image name, build info, and any adapter needed",
+    "   - 'docker': image name, optional relay 'url' override, build info, and any adapter needed",
     "   - 'remote': array of endpoints with transport type (quic or webtransport)",
     "5. Transport types:",
     "   - 'quic': Raw QUIC (moqt:// URL scheme)",
