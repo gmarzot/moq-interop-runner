@@ -17,6 +17,8 @@ on:
           - quiche-moq
           - xquic-relay
           - xquic-client
+          - imquic-relay
+          - imquic-client
       ref:
         description: 'Git ref for source builds (branch/tag/commit). Ignored for adapters.'
         required: false
@@ -105,6 +107,18 @@ jobs:
               echo "build_command=./builds/xquic/build.sh --ref $REF --target client" >> "$GITHUB_OUTPUT"
               echo 'images=[{"local":"xquic-moq-client:latest","ghcr":"ghcr.io/englishm/moq-interop-runner-xquic-moq-client"}]' >> "$GITHUB_OUTPUT"
               ;;
+            imquic-relay)
+              echo "build_type=build" >> "$GITHUB_OUTPUT"
+              echo "ref=" >> "$GITHUB_OUTPUT"
+              echo "build_command=./builds/imquic/build.sh --target relay" >> "$GITHUB_OUTPUT"
+              echo 'images=[{"local":"imquic-moq-relay:latest","ghcr":"ghcr.io/englishm/moq-interop-runner-imquic-moq-relay"}]' >> "$GITHUB_OUTPUT"
+              ;;
+            imquic-client)
+              echo "build_type=build" >> "$GITHUB_OUTPUT"
+              echo "ref=" >> "$GITHUB_OUTPUT"
+              echo "build_command=./builds/imquic/build.sh --target client" >> "$GITHUB_OUTPUT"
+              echo 'images=[{"local":"imquic-moq-interop-test:latest","ghcr":"ghcr.io/englishm/moq-interop-runner-imquic-moq-interop-test"}]' >> "$GITHUB_OUTPUT"
+              ;;  
             *)
               echo "::error::Unknown implementation: $IMPL"
               exit 1
@@ -128,6 +142,7 @@ jobs:
             moq-dev-rs-client)      IMPL_DIR="builds/moq-dev-rs" ;;
             moq-dev-js-client)      IMPL_DIR="builds/moq-dev-js" ;;
             xquic-relay|xquic-client) IMPL_DIR="builds/xquic" ;;
+            imquic-relay|imquic-client) IMPL_DIR="builds/imquic" ;;
           esac
 
           if [[ -f "$IMPL_DIR/.last-build.json" ]]; then
