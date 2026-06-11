@@ -2,12 +2,12 @@ use std::time::{Duration, Instant};
 
 use anyhow::Context;
 use clap::Parser;
-use moq_native::moq_lite;
-use moq_lite::*;
+use moq_native::moq_net;
+use moq_net::*;
 
 #[derive(Parser)]
 #[command(name = "moq-dev-rs-client")]
-#[command(about = "MoQT interop test client using moq-lite/moq-native")]
+#[command(about = "MoQT interop test client using moq-net/moq-native")]
 struct Cli {
     /// Relay URL (https:// for WebTransport, moqt:// for raw QUIC)
     #[arg(
@@ -45,11 +45,11 @@ const TESTS: &[&str] = &[
 ];
 
 /// Tests that are skipped with a reason.
-/// moq-lite doesn't support subscribing without first receiving an announcement,
-/// so tests that require eager/speculative SUBSCRIBE cannot be implemented.
+/// The moq-net consumer API doesn't support subscribing without first receiving an
+/// announcement, so tests that require eager/speculative SUBSCRIBE cannot be implemented.
 const SKIPPED_TESTS: &[(&str, &str)] = &[
-    ("subscribe-error", "moq-lite API requires announcement before subscribe"),
-    ("subscribe-before-announce", "moq-lite API requires announcement before subscribe"),
+    ("subscribe-error", "moq-net API requires announcement before subscribe"),
+    ("subscribe-before-announce", "moq-net API requires announcement before subscribe"),
 ];
 
 const TEST_NAMESPACE: &str = "moq-test/interop";
@@ -94,6 +94,25 @@ async fn main() -> anyhow::Result<()> {
     if cli.tls_disable_verify {
         client_config.tls.disable_verify = Some(true);
     }
+
+    // Optionally pin the offered protocol version(s) via MOQ_CLIENT_VERSION
+    // (comma-separated, e.g. "moq-transport-18"). By default the client offers
+    // every supported version and lets the relay choose -- which prefers the
+    // native moq-lite protocol over IETF moq-transport when both are available.
+    // Pin a version to force a specific draft for interop testing.
+    if let Ok(versions) = std::env::var("MOQ_CLIENT_VERSION") {
+        let versions = versions
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|s| s.parse::<moq_net::Version>().map_err(|e| anyhow::anyhow!(e)))
+            .collect::<anyhow::Result<Vec<_>>>()
+            .context("invalid MOQ_CLIENT_VERSION")?;
+        if !versions.is_empty() {
+            client_config.version = versions;
+        }
+    }
+
     let client = client_config.init().context("failed to init client")?;
 
     let mut all_passed = true;
@@ -198,12 +217,12 @@ async fn test_setup_only(
     client: &moq_native::Client,
     relay_url: &url::Url,
 ) -> anyhow::Result<Diagnostics> {
-    let session = client
+    let mut session = client
         .clone()
         .connect(relay_url.clone())
         .await
         .context("failed to connect")?;
-    session.close(moq_lite::Error::Cancel);
+    session.close(Error::Cancel);
 
     Ok(Diagnostics::default())
 }
@@ -213,13 +232,13 @@ async fn test_announce_only(
     client: &moq_native::Client,
     relay_url: &url::Url,
 ) -> anyhow::Result<Diagnostics> {
-    let origin = Origin::produce();
+    let origin = Origin::random().produce();
 
     // Create broadcast before connecting
-    let broadcast = Broadcast::produce();
+    let broadcast = Broadcast::new().produce();
     origin.publish_broadcast(TEST_NAMESPACE, broadcast.consume());
 
-    let session = client
+    let mut session = client
         .clone()
         .with_publish(origin.consume())
         .connect(relay_url.clone())
@@ -229,7 +248,7 @@ async fn test_announce_only(
     // Wait briefly for the announce to be processed
     tokio::time::sleep(Duration::from_millis(500)).await;
 
-    session.close(moq_lite::Error::Cancel);
+    session.close(Error::Cancel);
 
     Ok(Diagnostics::default())
 }
@@ -239,12 +258,12 @@ async fn test_publish_namespace_done(
     client: &moq_native::Client,
     relay_url: &url::Url,
 ) -> anyhow::Result<Diagnostics> {
-    let origin = Origin::produce();
+    let origin = Origin::random().produce();
 
-    let broadcast = Broadcast::produce();
+    let broadcast = Broadcast::new().produce();
     origin.publish_broadcast(TEST_NAMESPACE, broadcast.consume());
 
-    let session = client
+    let mut session = client
         .clone()
         .with_publish(origin.consume())
         .connect(relay_url.clone())
@@ -258,7 +277,7 @@ async fn test_publish_namespace_done(
     // Wait briefly for the done to propagate
     tokio::time::sleep(Duration::from_millis(200)).await;
 
-    session.close(moq_lite::Error::Cancel);
+    session.close(Error::Cancel);
 
     Ok(Diagnostics::default())
 }
@@ -269,17 +288,17 @@ async fn test_announce_subscribe(
     relay_url: &url::Url,
 ) -> anyhow::Result<Diagnostics> {
     // Publisher setup
-    let pub_origin = Origin::produce();
-    let mut broadcast = Broadcast::produce();
+    let pub_origin = Origin::random().produce();
+    let mut broadcast = Broadcast::new().produce();
     pub_origin.publish_broadcast(TEST_NAMESPACE, broadcast.consume());
 
     // Create a track so subscriber can find it
     let _track = broadcast.create_track(Track {
         name: TEST_TRACK.to_string(),
         priority: 0,
-    });
+    })?;
 
-    let pub_session = client
+    let mut pub_session = client
         .clone()
         .with_publish(pub_origin.consume())
         .connect(relay_url.clone())
@@ -290,10 +309,10 @@ async fn test_announce_subscribe(
     tokio::time::sleep(Duration::from_millis(300)).await;
 
     // Subscriber setup
-    let sub_origin = Origin::produce();
+    let sub_origin = Origin::random().produce();
     let mut sub_consumer = sub_origin.consume();
 
-    let sub_session = client
+    let mut sub_session = client
         .clone()
         .with_consume(sub_origin)
         .connect(relay_url.clone())
@@ -317,7 +336,7 @@ async fn test_announce_subscribe(
     let track = sub_broadcast.subscribe_track(&Track {
         name: TEST_TRACK.to_string(),
         priority: 0,
-    });
+    })?;
 
     // Wait for the track subscription to be acknowledged
     tokio::select! {
@@ -329,8 +348,8 @@ async fn test_announce_subscribe(
         }
     }
 
-    pub_session.close(moq_lite::Error::Cancel);
-    sub_session.close(moq_lite::Error::Cancel);
+    pub_session.close(Error::Cancel);
+    sub_session.close(Error::Cancel);
 
     Ok(Diagnostics::default())
 }

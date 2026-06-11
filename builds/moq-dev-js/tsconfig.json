@@ -6,6 +6,10 @@
 		"strict": true,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
+		"types": ["node", "bun"],
+		// @moq/web-transport ships raw .ts sources with explicit .ts import
+		// specifiers; allow them (safe under --noEmit, which `check` uses).
+		"allowImportingTsExtensions": true,
 		"outDir": "dist",
 		"rootDir": "src"
 	},

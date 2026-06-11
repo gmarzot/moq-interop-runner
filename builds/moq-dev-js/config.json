@@ -1,6 +1,6 @@
 {
 	"name": "moq-dev-js",
-	"description": "moq-dev JS/TypeScript test client using @moq/lite",
+	"description": "moq-dev JS/TypeScript test client using @moq/net",
 	"repository": "https://github.com/moq-dev/moq",
 	"targets": {
 		"client": {
