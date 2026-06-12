@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Dockerfile for moq-dev-js-client (Bun/TypeScript)
 #
-# Builds a test client using @moq/lite with a WebTransport polyfill.
+# Builds a test client using @moq/net with a WebTransport polyfill.
 #
 # Usage:
 #   docker build -t moq-dev-js-client:latest -f Dockerfile.client .

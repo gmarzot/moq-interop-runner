@@ -1,8 +1,10 @@
 // moq-dev-js test client
-// MoQT interop test client using @moq/lite with WebTransport polyfill
+// MoQT interop test client using @moq/net with the @moq/web-transport polyfill
 
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import * as Moq from "@moq/net";
 import { install } from "@moq/web-transport";
-import * as Moq from "@moq/lite";
 
 // Redirect all console output to stderr so library debug output
 // doesn't corrupt TAP on stdout.
@@ -21,7 +23,8 @@ process.on("unhandledRejection", (err) => {
 	console.error("unhandled rejection:", err);
 });
 
-// Initialize WebTransport polyfill
+// Install the @moq/web-transport polyfill (QUIC/HTTP3 via a NAPI addon).
+// @moq/net's connect() reads globalThis.WebTransport at call time.
 install();
 
 const TESTS = [
@@ -137,6 +140,30 @@ function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Path to the relay's TLS certificate, mounted by the interop runner following
+// the QUIC interop convention (/certs/cert.pem). Override with CERT_PATH.
+const CERT_PATH = process.env.CERT_PATH ?? "/certs/cert.pem";
+
+// Compute the SHA-256 of the leaf certificate's DER encoding, suitable for
+// WebTransport `serverCertificateHashes`. Returns undefined if no cert is found.
+function certHash(): Uint8Array<ArrayBuffer> | undefined {
+	let pem: string;
+	try {
+		pem = readFileSync(CERT_PATH, "utf8");
+	} catch {
+		return undefined;
+	}
+
+	// Use only the first (leaf) certificate block.
+	const match = pem.match(
+		/-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----/,
+	);
+	if (!match) return undefined;
+
+	const der = Buffer.from(match[1].replace(/\s+/g, ""), "base64");
+	return new Uint8Array(createHash("sha256").update(der).digest());
+}
+
 // Connect to the relay, returning an established connection
 async function connect(
 	relayUrl: string,
@@ -147,7 +174,18 @@ async function connect(
 	const options: Moq.Connection.ConnectProps = {};
 
 	if (tlsDisableVerify) {
-		options.webtransport = { serverCertificateDisableVerify: true } as WebTransportOptions;
+		// Prefer pinning the mounted self-signed cert via serverCertificateHashes
+		// over https://. This works against any relay using that cert, unlike the
+		// http:// `/certificate.sha256` fingerprint fetch (a moq.dev-only, non-
+		// standard convention). Fall back to that fetch if no cert is mounted.
+		const hash = certHash();
+		if (hash) {
+			options.webtransport = {
+				serverCertificateHashes: [{ algorithm: "sha-256", value: hash }],
+			};
+		} else {
+			url.protocol = "http:";
+		}
 	}
 
 	return await Moq.Connection.connect(url, options);

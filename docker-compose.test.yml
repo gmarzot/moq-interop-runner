@@ -56,6 +56,11 @@ services:
       - TLS_DISABLE_VERIFY=1
     volumes:
       - ./mlog/client:/mlog
+      # Mount the relay's cert (read-only) so clients can pin a self-signed
+      # cert via its hash (e.g. WebTransport serverCertificateHashes) instead of
+      # relying on a relay-specific fingerprint endpoint. Ignored by clients
+      # that don't need it.
+      - ./certs:/certs:ro
     # Resource limits
     deploy:
       resources:

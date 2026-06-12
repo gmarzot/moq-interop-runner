@@ -18,11 +18,15 @@ CERTS_DIR="${1:-./certs}"
 
 mkdir -p "$CERTS_DIR"
 
-# Generate self-signed cert valid for localhost, relay hostname, and common test hostnames
-openssl req -x509 -newkey rsa:4096 \
+# Generate self-signed cert valid for localhost, relay hostname, and common test hostnames.
+#
+# ECDSA P-256 with a short (10-day) validity so the cert satisfies the WebTransport
+# `serverCertificateHashes` policy (ECDSA key + <=14-day validity), letting browser
+# and node/bun clients pin it by hash without a trusted CA.
+openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
     -keyout "$CERTS_DIR/priv.key" \
     -out "$CERTS_DIR/cert.pem" \
-    -days 365 -nodes \
+    -days 10 -nodes \
     -subj "/CN=localhost" \
     -addext "subjectAltName=DNS:localhost,DNS:relay,DNS:moq-relay,IP:127.0.0.1"
 

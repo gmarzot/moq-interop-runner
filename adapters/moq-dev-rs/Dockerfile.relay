@@ -12,7 +12,7 @@
 # Usage:
 #   docker run -v ./certs:/certs -p 4443:4443/udp moq-dev-rs-interop:latest
 
-FROM docker.io/kixelated/moq-relay
+FROM docker.io/moqdev/moq-relay
 
 # Map our /certs convention to moq-relay's expected env vars
 ENV MOQ_SERVER_BIND=[::]:4443
