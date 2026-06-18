@@ -258,9 +258,17 @@ run_with_timeout() {
 
     local command_status=0
     wait "$command_pid" || command_status=$?
-    kill "$watchdog_pid" 2>/dev/null || true
+
+    # Check if watchdog is still alive — if yes, command finished before timeout
+    if kill -0 "$watchdog_pid" 2>/dev/null; then
+        kill "$watchdog_pid" 2>/dev/null || true
+        wait "$watchdog_pid" 2>/dev/null || true
+        rm -f "$timeout_marker"
+        return "$command_status"
+    fi
     wait "$watchdog_pid" 2>/dev/null || true
 
+    # Watchdog already exited — it fired the timeout
     if [ -f "$timeout_marker" ]; then
         rm -f "$timeout_marker"
         return 124
