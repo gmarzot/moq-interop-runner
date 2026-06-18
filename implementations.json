@@ -29,7 +29,7 @@
       "draft_versions": [
         "draft-16"
       ],
-      "notes": "EXPERIMENTAL control-plane-only interop relay for aiomoqt (Python asyncio MoQT). No data forwarding, no auth, no scale handling — exercises the 6 standard interop cases over WebTransport at draft-16. Use moxygen / moq-rs for real workloads. Pinned to draft-16; full multi-version relay negotiation is planned for a future release.",
+      "notes": "aiomoqt server-side control plane over WebTransport (draft-16): SETUP, PUBLISH_NAMESPACE, SUBSCRIBE. No object forwarding.",
       "roles": {
         "relay": {
           "docker": {
