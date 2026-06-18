@@ -22,6 +22,28 @@
         }
       }
     },
+    "aiomoqt-relay": {
+      "name": "aiomoqt (relay)",
+      "organization": "MarzResearch",
+      "repository": "https://github.com/gmarzot/aiomoqt",
+      "draft_versions": [
+        "draft-16"
+      ],
+      "notes": "EXPERIMENTAL control-plane-only interop relay for aiomoqt (Python asyncio MoQT). No data forwarding, no auth, no scale handling — exercises the 6 standard interop cases over WebTransport at draft-16. Use moxygen / moq-rs for real workloads. Pinned to draft-16; full multi-version relay negotiation is planned for a future release.",
+      "roles": {
+        "relay": {
+          "docker": {
+            "image": "aiomoqt-interop-relay:latest",
+            "build": {
+              "dockerfile": "adapters/aiomoqt/Dockerfile.relay",
+              "context": "adapters/aiomoqt"
+            },
+            "upstream_image": "ghcr.io/gmarzot/aiomoqt:latest",
+            "notes": "Adapter pins relay mode + draft-16 WebTransport on the /certs convention (MOQT_ROLE=relay)."
+          }
+        }
+      }
+    },
     "imquic": {
       "name": "imquic",
       "organization": "Meetecho",
