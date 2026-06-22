@@ -22,6 +22,28 @@
         }
       }
     },
+    "aiomoqt-relay": {
+      "name": "aiomoqt (relay)",
+      "organization": "MarzResearch",
+      "repository": "https://github.com/gmarzot/aiomoqt",
+      "draft_versions": [
+        "draft-16"
+      ],
+      "notes": "aiomoqt server-side control plane over WebTransport (draft-16): SETUP, PUBLISH_NAMESPACE, SUBSCRIBE. No object forwarding.",
+      "roles": {
+        "relay": {
+          "docker": {
+            "image": "aiomoqt-interop-relay:latest",
+            "build": {
+              "dockerfile": "adapters/aiomoqt/Dockerfile.relay",
+              "context": "adapters/aiomoqt"
+            },
+            "upstream_image": "ghcr.io/gmarzot/aiomoqt:latest",
+            "notes": "Adapter pins relay mode + draft-16 WebTransport on the /certs convention (MOQT_ROLE=relay)."
+          }
+        }
+      }
+    },
     "imquic": {
       "name": "imquic",
       "organization": "Meetecho",
